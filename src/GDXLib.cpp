@@ -12,10 +12,6 @@
 
 GDXLib::GDXLib()
 {}
-char deviceName[32];
-int channelNumber;
-uint8_t chargerStatus;
-int batteryPercent;
 //char strBuffer[32];
 //char strFW1[16];// These are not used in my code
 //char strFW2[16];
@@ -669,7 +665,6 @@ bool GDXLib::D2PIO_GetStatus()
     Serial.print("***  Status: ");
     Serial.println(pResponse->status);
   #endif
-  chargerStatus= (pResponse->chargerState);
   return true;
 }
 
@@ -779,6 +774,15 @@ byte GDXLib::GDX_getDefaultSensor()
     testMask = testMask << 1;
   }
   return 1; //if this did not work, just return 1 as the default
+}
+
+unsigned long GDXLib::getAvailableChannels()
+{
+   unsigned long availableMask = 0;
+    
+   if (!D2PIO_GetAvailableChannels(availableMask)) return 0;
+
+   return availableMask;
 }
 
 //=============================================================================

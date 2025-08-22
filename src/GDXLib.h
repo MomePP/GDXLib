@@ -36,6 +36,7 @@ class GDXLib
     byte GDX_getDefaultSensor();
     float getMeasurement(byte selectedSensor);
     //char getUnits(byte selectedSensor);
+    unsigned long getAvailableChannels();
     const char* getUnits(byte selectedSensor);
     const char* getSensorName(byte selectedSensor);
     //const char* getDeviceName();
