@@ -391,12 +391,20 @@ bool GDXLib::GDX_ReadMeasurement(byte buffer[], int timeout)
   
   byte offset = 0;
   int timeoutCounter = 0;
-  // Return immediately if there is nothing to do.
-  while (!g_d2pioResponse.valueUpdated()){
-    delay(5);//!!!may not be necessary
-  }
+
   while (true)
   {
+    while (!g_d2pioResponse.valueUpdated())
+    {
+      timeoutCounter++;
+      if (timeoutCounter > timeout)
+      {
+        //Serial.println("***ERROR: GDX_ReadMeasurement timeout!");
+        return false;
+      }
+      delay(1);
+    }
+
     // Copy the current chunk into the output buffer
     #if defined DEBUG
       Serial.print("*");
