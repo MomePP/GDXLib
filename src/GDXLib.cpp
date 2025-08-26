@@ -478,11 +478,6 @@ bool GDXLib::GDX_ReadMeasurement(byte buffer[], int timeout)
       memcpy(&record7, &buffer[33], 4);
       g_measurement7 = record7;
       }
-
-    #if defined DEBUG
-      Serial.print("***measurement in readMeasurement: ");
-      Serial.println(measurement);
-    #endif
   }
   else if (buffer[4] == NGI_BLOB_MEAS_BLOB_SUB_TYPE_WIDE_REAL32)
   {
