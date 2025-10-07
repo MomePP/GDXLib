@@ -951,7 +951,7 @@ bool GDXLib::open(char* deviceName)
     String strongest_device = "None";
     String final_device = "None";
     int strongest_rssi = -1000;
-    int threshold = -60; //modify threshold if needed
+    int threshold = -80; //modify threshold if needed
     int i = 0;
 
     // loop until a peripheral is found
