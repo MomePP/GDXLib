@@ -315,7 +315,7 @@ void GDXLib::D2PIO_Dump(const char* strPrefix, const byte buffer[])
 //=============================================================================
 bool GDXLib::D2PIO_Write(const byte buffer[])
 {
-  D2PIO_Dump("D2PIO >> ", buffer);
+  // D2PIO_Dump("D2PIO >> ", buffer);
 
   byte lengthRemaining = buffer[1];
   byte lengthChunk;
@@ -368,7 +368,7 @@ bool GDXLib::D2PIO_ReadBlocking(byte buffer[], int timeout)
     if ((offset >= 1) && (offset == buffer[1])) break;
   }
 
-  D2PIO_Dump("D2PIO << ", buffer);
+  // D2PIO_Dump("D2PIO << ", buffer);
   return true;
 }
 
@@ -406,32 +406,32 @@ bool GDXLib::GDX_ReadMeasurement(byte buffer[], int timeout)
     }
 
     // Copy the current chunk into the output buffer
-    #if defined DEBUG
-      Serial.print("*");
-    #endif
+    // #if defined DEBUG
+    //   Serial.print("*");
+    // #endif
 
     memcpy(&buffer[offset], g_d2pioResponse.value(), g_d2pioResponse.valueLength());
     offset = offset + g_d2pioResponse.valueLength();
-    #if defined DEBUG
-        Serial.print("buffer: ");
-        for (int i = 0; i < buffer[1]; i++)
-          {
-            Serial.print(buffer[i], HEX);
-            Serial.print("** ");
-          }
-          Serial.println("end of buffer");
-    #endif
+    // #if defined DEBUG
+    //     Serial.print("buffer: ");
+    //     for (int i = 0; i < buffer[1]; i++)
+    //       {
+    //         Serial.print(buffer[i], HEX);
+    //         Serial.print("** ");
+    //       }
+    //       Serial.println("end of buffer");
+    // #endif
     // Check if we have received the complete packet
-    #if defined DEBUG
-      Serial.println("complete packet received");
-    #endif 
+    // #if defined DEBUG
+    //   Serial.println("complete packet received");
+    // #endif 
     // Now that we have started to receive a measurement, we must wait for all of it to arrive.
     if ((offset >= 1) && (offset == buffer[1])){
        break;
     }
   }// end of while(true)
 
-  D2PIO_Dump("D2PIO << ", buffer);
+  // D2PIO_Dump("D2PIO << ", buffer);
 
   // Extract normal measurement packets -- NGI_BLOB_MEAS_BLOB_SUB_TYPE_NORMAL_REAL32
   // We only take the first measurement from the packet.  The protocol allows
