@@ -4,7 +4,7 @@
 ---  
 */
 
-//#define DEBUG //NOTE THIS PRINTS OUT DECODING STUFF!!!
+// #define DEBUG //NOTE THIS PRINTS OUT DECODING STUFF!!!
 #include "ArduinoBLE.h"
 #include "Arduino.h"
 #include "GDXLib.h"
@@ -865,7 +865,13 @@ bool GDXLib::GDX_StopMeasurements()
 //=============================================================================
 bool GDXLib::open(char* deviceName)
 {
-  g_deviceName = deviceName;
+  // Keep a static buffer so g_deviceName can safely point to a trimmed string
+  static char namebuf[64] = {0};
+
+  String dev = deviceName ? String(deviceName) : String();
+  dev.trim(); // removes leading/trailing whitespace, CR, LF
+  dev.toCharArray(namebuf, sizeof(namebuf));
+  g_deviceName = namebuf;
   
   #if defined DEBUG
     Serial.println("***in open()");
@@ -886,7 +892,7 @@ bool GDXLib::open(char* deviceName)
       return false;
   }
 
-  if (g_deviceName == "proximity") {
+  if (g_deviceName[0] != '\0' && strcmp(g_deviceName, "proximity") == 0) {
     // Serial.println("in proximity case..");
     if (!GoDirectBLE_Scan_Proximity())
       return false;
@@ -943,8 +949,8 @@ bool GDXLib::open(char* deviceName)
   bool GDXLib::GoDirectBLE_Scan_Proximity()
   {
 
-    // Serial.print("Begin proximity scan for nearest Go Direct");
-    // Serial.println();
+    Serial.print("Begin proximity scan for nearest Go Direct");
+    Serial.println();
 
     BLE.scan(false); //
     delay(100);
@@ -959,51 +965,51 @@ bool GDXLib::open(char* deviceName)
 
       // check if a peripheral has been discovered
       BLEDevice peripheral = BLE.available();
-      // Serial.print(" i = ");
-      // Serial.println(i);
+      Serial.print(" i = ");
+      Serial.println(i);
 
       if (peripheral) {
-        // Serial.println("Discovered a peripheral");
-        // Serial.print("Local Name: ");
+        Serial.println("Discovered a peripheral");
+        Serial.print("Local Name: ");
         
         if (peripheral.hasLocalName()) {
-          // Serial.println(peripheral.localName());
-          // Serial.println("Is this GDX:  ");
+          Serial.println(peripheral.localName());
+          Serial.println("Is this GDX:  ");
         
           if ((peripheral.localName()[0] == 'G') &&
           (peripheral.localName()[1] == 'D') &&
           (peripheral.localName()[2] == 'X')) {
           
-            // Serial.println("YES");
-            // Serial.print("RSSI: ");
-            // Serial.println(peripheral.rssi());
+            Serial.println("YES");
+            Serial.print("RSSI: ");
+            Serial.println(peripheral.rssi());
 
             if (peripheral.rssi() > strongest_rssi) {
               strongest_rssi = peripheral.rssi();
               strongest_device = peripheral.localName();
-              // Serial.print("Set strongest RSSI to: ");
-              // Serial.println(peripheral.localName());
-              // Serial.println("");
+              Serial.print("Set strongest RSSI to: ");
+              Serial.println(peripheral.localName());
+              Serial.println("");
               g_peripheral = peripheral;
             }
           }
-          // else {
-          //   Serial.println("NO");
-          // }
+          else {
+            Serial.println("NO");
+          }
         }
       }
-      // else {
-      //   Serial.println("no peripheral found");
-      // }
+      else {
+        Serial.println("no peripheral found");
+      }
       if (i > 10) {
         if (strongest_rssi > threshold) {
-          //Serial.println("Discovered proximity device! Scan stopped");
+          Serial.println("Discovered proximity device! Scan stopped");
           BLE.stopScan();
           break; //device has been found
         }
-        // else {
-        //   Serial.println("no devices with rssi lower than threshold");
-        // }
+        else {
+          Serial.println("no devices with rssi lower than threshold");
+        }
       }
       delay(100);
       i ++;
