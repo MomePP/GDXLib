@@ -140,6 +140,8 @@ struct D2PIOGetSensorChannelInfoCmdResponse
 // #define GDX_BLE_STATE_ERROR      11
 
 // static int                                         g_State = GDX_BLE_STATE_RESET;
+static volatile bool                               g_abortScan = false;
+static volatile bool                               g_scanning = false;
 static BLEDevice                                   g_peripheral;
 static BLECharacteristic                           g_d2pioCommand;
 static BLECharacteristic                           g_d2pioResponse;
@@ -865,6 +867,10 @@ bool GDXLib::GDX_StopMeasurements()
 //=============================================================================
 bool GDXLib::open(char* deviceName)
 {
+  // ensure no stale abort marker prevents upcoming scan
+  g_abortScan = false;
+  g_scanning = false;
+
   // Keep a static buffer so g_deviceName can safely point to a trimmed string
   static char namebuf[64] = {0};
 
@@ -895,12 +901,18 @@ bool GDXLib::open(char* deviceName)
   if (g_deviceName[0] != '\0' && strcmp(g_deviceName, "proximity") == 0) {
     // Serial.println("in proximity case..");
     if (!GoDirectBLE_Scan_Proximity())
+    {
+      this->close();
       return false;
+    }
   }
   else {
     // Serial.println("in scan for name case..");
     if (!GoDirectBLE_Scan_For_Name())
+    {
+      this->close();
       return false;
+    }
   }
 
   if (!GoDirectBLE_Connect())
@@ -943,78 +955,119 @@ bool GDXLib::open(char* deviceName)
   return true;
 } 
 
+void GDXLib::abortScan()
+{
+#if defined DEBUG
+  Serial.print("***GDXLib::abortScan() called. g_scanning=");
+  Serial.print(g_scanning ? "1" : "0");
+  Serial.print(" g_abortScan=");
+  Serial.println(g_abortScan ? "1" : "0");
+#endif
+
+    if (!g_scanning) {
+#if defined DEBUG
+      Serial.println("***abortScan: no active scan, returning");
+#endif
+      return;
+    }
+
+    g_abortScan = true;
+#if defined DEBUG
+    Serial.println("***abortScan: abort flag set");
+#endif
+    // do not block here; the scanning loop will observe and stop quickly
+}
+
+bool GDXLib::isScanning()
+{
+    return g_scanning;
+}
+
 //=============================================================================
 // GoDirectBLE_Scan_Proximity() Function
 //=============================================================================
   bool GDXLib::GoDirectBLE_Scan_Proximity()
   {
-
+#if defined DEBUG
     Serial.print("Begin proximity scan for nearest Go Direct");
     Serial.println();
+#endif
 
-    BLE.scan(false); //
-    delay(100);
-    String strongest_device = "None";
-    String final_device = "None";
+    // Reset BLE scan state and previous peripheral before starting
+    g_abortScan = false;
+    g_scanning = true;
+
+    BLE.scan(false);
+    delay(1000);
+
     int strongest_rssi = -1000;
-    int threshold = -80; //modify threshold if needed
+    int threshold = -80;
+
+    unsigned long start = millis();
+    const unsigned long timeout = 10000;
+
     int i = 0;
-
-    // loop until a peripheral is found
+    bool result = false;
     while (true) {
+      if (g_abortScan) {
+#if defined DEBUG
+        Serial.println("***GoDirectBLE_Scan_Proximity: abort observed");
+#endif
+        BLE.stopScan();
+        result = false;
+        break;
+      }
 
-      // check if a peripheral has been discovered
       BLEDevice peripheral = BLE.available();
-      Serial.print(" i = ");
-      Serial.println(i);
-
       if (peripheral) {
-        Serial.println("Discovered a peripheral");
-        Serial.print("Local Name: ");
-        
+#if defined DEBUG
+        Serial.print("Address: ");
+        Serial.println(peripheral.address());
+#endif
         if (peripheral.hasLocalName()) {
+#if defined DEBUG
+          Serial.print("Discovered device: ");
           Serial.println(peripheral.localName());
-          Serial.println("Is this GDX:  ");
-        
+#endif
           if ((peripheral.localName()[0] == 'G') &&
-          (peripheral.localName()[1] == 'D') &&
-          (peripheral.localName()[2] == 'X')) {
-          
-            Serial.println("YES");
-            Serial.print("RSSI: ");
-            Serial.println(peripheral.rssi());
-
+              (peripheral.localName()[1] == 'D') &&
+              (peripheral.localName()[2] == 'X')) {
             if (peripheral.rssi() > strongest_rssi) {
               strongest_rssi = peripheral.rssi();
-              strongest_device = peripheral.localName();
-              Serial.print("Set strongest RSSI to: ");
-              Serial.println(peripheral.localName());
-              Serial.println("");
               g_peripheral = peripheral;
             }
           }
-          else {
-            Serial.println("NO");
-          }
         }
       }
-      else {
-        Serial.println("no peripheral found");
-      }
+
       if (i > 10) {
         if (strongest_rssi > threshold) {
+#if defined DEBUG
           Serial.println("Discovered proximity device! Scan stopped");
+#endif
           BLE.stopScan();
-          break; //device has been found
-        }
-        else {
-          Serial.println("no devices with rssi lower than threshold");
+          result = true;
+          break;
         }
       }
+
       delay(100);
-      i ++;
-    }  
-  return true; //device was found, while loop exited, end Scan For Name
+      i++;
+      if ((millis() - start) > timeout) {
+#if defined DEBUG
+        Serial.println("Proximity scan timeout");
+#endif
+        BLE.stopScan();
+        result = false;
+        break;
+      }
+    }
+
+    // cleanup flags
+    g_scanning = false;
+    g_abortScan = false;
+
+    return result;
   }
       
 //=============================================================================
@@ -1022,28 +1075,60 @@ bool GDXLib::open(char* deviceName)
 //=============================================================================
   bool GDXLib::GoDirectBLE_Scan_For_Name()
   {
-    // Serial.print("Begin BLE Scan for name: ");
-    // Serial.println(g_deviceName);
-    // Serial.println();
+#if defined DEBUG
+    Serial.print("Begin BLE Scan for name: ");
+    Serial.println(g_deviceName);
+    Serial.println();
+#endif
 
-    BLE.scanForName(g_deviceName);
+    g_abortScan = false;
+    g_scanning = true;
+
+    BLE.scanForName(g_deviceName, false);
     delay(1000);
 
-    // loop until a peripheral is found
+    unsigned long start = millis();
+    const unsigned long timeout = 10000; // tune as needed
+
+    bool result = false;
     while (true) {
-      BLEDevice peripheral = BLE.available();
-      if (peripheral) {     //escape while loop if found
-        // discovered a peripheral
-        //Serial.println("Discovered the Go Direct peripheral! Scan stopped");
+      if (g_abortScan) {
+#if defined DEBUG
+        Serial.println("***GoDirectBLE_Scan_For_Name: abort observed");
+#endif
         BLE.stopScan();
-        g_peripheral = peripheral;
+        result = false;
         break;
       }
-    delay(1000);
-    //Serial.println(" No peripheral, Scan again");
+
+      BLEDevice peripheral = BLE.available();
+      if (peripheral) {
+#if defined DEBUG
+        Serial.println("Discovered the Go Direct peripheral! Scan stopped");
+#endif
+        BLE.stopScan();
+        g_peripheral = peripheral;
+        result = true;
+        break;
+      }
+
+      delay(100);
+      if ((millis() - start) > timeout) {
+#if defined DEBUG
+        Serial.println("Scan timeout, no peripheral found");
+#endif
+        BLE.stopScan();
+        result = false;
+        break;
+      }
     }
-    return true;
-  } //end Scan
+
+    // cleanup flags
+    g_scanning = false;
+    g_abortScan = false;
+
+    return result;
+  }
 
 //=============================================================================
 // GoDirectBLE_Connect() Function

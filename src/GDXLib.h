@@ -26,6 +26,8 @@ class GDXLib
     //void open(char* deviceName, byte channelNumber, unsigned long samplePeriodInMilliseconds);
     //bool open(char* deviceName, byte channelNumber, unsigned long samplePeriodInMilliseconds);
     bool open(char* deviceName); //="proximity" if they want to do proximity pairing
+    void abortScan();
+    bool isScanning();
     void enableSensor(byte selectedSensor); //=255, if the user wants to use the default sensor
     void start(unsigned long period);
     void stop();
