@@ -234,14 +234,14 @@ bool GDXLib::D2PIO_DiscoverService(BLEDevice peripheral)
   // --------------------------------------------
   // Discover the D2PIO service
   // --------------------------------------------
-  //Serial.println("***Discovering D2PIO service attributes ...");
+  // Serial.println("***Discovering D2PIO service attributes ...");
   if (!peripheral.discoverService(uuidService))
   {
-    //Serial.println("***ERROR: D2PIO service attribute discovery failed!");
+    // Serial.println("***ERROR: D2PIO service attribute discovery failed!");
     return false;
   }
-  //Serial.print("***Found D2PIO service ");
-  //Serial.println(peripheral.service(uuidService).uuid());
+  // Serial.print("***Found D2PIO service ");
+  // Serial.println(peripheral.service(uuidService).uuid());
 
   // --------------------------------------------
   // Discover the command characteristic
@@ -249,11 +249,11 @@ bool GDXLib::D2PIO_DiscoverService(BLEDevice peripheral)
   g_d2pioCommand = peripheral.service(uuidService).characteristic(uuidCommand);
   if (!g_d2pioCommand)
   {
-    //Serial.println("***ERROR: D2PIO command characteristic discovery failed!");
+    // Serial.println("***ERROR: D2PIO command characteristic discovery failed!");
     return false;
   }
-  //Serial.print("***Found D2PIO command characteristic ");
-  //Serial.println(peripheral.service(uuidService).characteristic(uuidCommand).uuid());
+  // Serial.print("***Found D2PIO command characteristic ");
+  // Serial.println(peripheral.service(uuidService).characteristic(uuidCommand).uuid());
 
   // --------------------------------------------
   // Discover the response characteristic
@@ -261,18 +261,18 @@ bool GDXLib::D2PIO_DiscoverService(BLEDevice peripheral)
   g_d2pioResponse = peripheral.service(uuidService).characteristic(uuidResponse);
   if (!g_d2pioResponse)
   {
-    //Serial.println("***ERROR: D2PIO response characteristic discovery failed!");
+    // Serial.println("***ERROR: D2PIO response characteristic discovery failed!");
     return false;
   }
-  //Serial.print("***Found D2PIO response characteristic ");
-  //Serial.println(peripheral.service(uuidService).characteristic(uuidResponse).uuid());
+  // Serial.print("***Found D2PIO response characteristic ");
+  // Serial.println(peripheral.service(uuidService).characteristic(uuidResponse).uuid());
 
   if (!g_d2pioResponse.subscribe()) {
-    //Serial.println("***ERROR: Failed to subscribe to D2PIO esponse characteristic");
+    // Serial.println("***ERROR: Failed to subscribe to D2PIO esponse characteristic");
     return false;
   }
-  //Serial.println("***Subscribed to D2PIO response notifications");
-  //d2pioResponse.setEventHandler(BLEValueUpdated, D2PIO_ResponseHandler);
+  // Serial.println("***Subscribed to D2PIO response notifications");
+  // d2pioResponse.setEventHandler(BLEValueUpdated, D2PIO_ResponseHandler);
 
     return true;
 }
@@ -880,7 +880,7 @@ bool GDXLib::open(char* deviceName)
   #endif
 
   if (!BLE.begin()) {
-      // // Serial.println("Disconnect, and then reconnect, the Arduino USB cable");
+      // Serial.println("Disconnect, and then reconnect, the Arduino USB cable");
       #if defined(ARDUINO_UNOWIFIR4)
         // if it is unor4 wifi, then reset BLE and reboot board
         static const char RESET[] = "AT+RESET\n";
@@ -931,7 +931,7 @@ bool GDXLib::open(char* deviceName)
   sprintf(_orderCode,"%s",GoDirectBLE_GetOrderCode());
   sprintf(_serialNumber,"%s",GoDirectBLE_GetSerialNumber());
 
-  #if defined DEBUG
+#if defined DEBUG
   Serial.println("***HERE is all the info");
   Serial.print("*** _RSSI"); 
   Serial.println(_RSSI);
@@ -939,7 +939,7 @@ bool GDXLib::open(char* deviceName)
   Serial.println(_batteryPercent);
   Serial.print("***_chargeState");
   Serial.println(_chargeState);
-  #endif
+#endif
   return true;
 } 
 
@@ -1066,7 +1066,7 @@ bool GDXLib::open(char* deviceName)
   bool GDXLib::GoDirectBLE_Discover_Attributes()
   {    
     // discover peripheral attributes
-    //Serial.println("Discovering attributes ...");
+    // Serial.println("Discovering attributes ...");
     if (!g_peripheral.discoverAttributes()) {
       // Serial.println("Attribute discovery failed!");
       // Serial.println("Disconnect USB cable, reconnect, and run the Upload again");
@@ -1075,7 +1075,7 @@ bool GDXLib::open(char* deviceName)
       return false;
     }
     
-    //Serial.println("Attributes discovered");
+    // Serial.println("Attributes discovered");
     return true;
   }
 
