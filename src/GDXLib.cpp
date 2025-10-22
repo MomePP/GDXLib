@@ -1392,10 +1392,76 @@ bool GDXLib::GoDirectBLE_DisplayChannelAsInteger()
 //=============================================================================
 void GDXLib::close()
 {
-  //BLE.disconnect(); Jorge only suggested peripheral.disconnect()
-  g_peripheral.disconnect();
-  BLE.end();  //jorge did not suggest this, but is it more reliable?
+  // disconnect peripheral if connected
+  if (g_peripheral) {
+    g_peripheral.disconnect();
+  }
+
+  // Tear down BLE stack
+  // BLE.disconnect();
+  BLE.end();
+
+  // Clear library-global state so future open()/scan() starts from a clean slate
+  g_peripheral = BLEDevice();                // clear stored peripheral
+  g_d2pioCommand = BLECharacteristic();      // clear characteristics
+  g_d2pioResponse = BLECharacteristic();
+  g_sensorMask = 0;
+  g_rollingCounter = 0;
+  g_RSSIStrength = 0;
+  g_abortScan = false;
+  g_scanning = false;
+
+  // Clear enabled sensor bookkeeping
+  g_firstEnabledSensor = 0;
+  g_secondEnabledSensor = 0;
+  g_thirdEnabledSensor = 0;
+  g_fourthEnabledSensor = 0;
+  g_fifthEnabledSensor = 0;
+  g_sixthEnabledSensor = 0;
+  g_seventhEnabledSensor = 0;
+
+  // Clear units and channel name buffers
+  memset(g_firstUnits, 0, sizeof(g_firstUnits));
+  memset(g_secondUnits, 0, sizeof(g_secondUnits));
+  memset(g_thirdUnits, 0, sizeof(g_thirdUnits));
+  memset(g_fourthUnits, 0, sizeof(g_fourthUnits));
+  memset(g_fifthUnits, 0, sizeof(g_fifthUnits));
+  memset(g_sixthUnits, 0, sizeof(g_sixthUnits));
+  memset(g_seventhUnits, 0, sizeof(g_seventhUnits));
+
+  memset(g_firstChannelName, 0, sizeof(g_firstChannelName));
+  memset(g_secondChannelName, 0, sizeof(g_secondChannelName));
+  memset(g_thirdChannelName, 0, sizeof(g_thirdChannelName));
+  memset(g_fourthChannelName, 0, sizeof(g_fourthChannelName));
+  memset(g_fifthChannelName, 0, sizeof(g_fifthChannelName));
+  memset(g_sixthChannelName, 0, sizeof(g_sixthChannelName));
+  memset(g_seventhChannelName, 0, sizeof(g_seventhChannelName));
+
+  // Clear measurement buffers
+  g_measurement1 = 0.0f;
+  g_measurement2 = 0.0f;
+  g_measurement3 = 0.0f;
+  g_measurement4 = 0.0f;
+  g_measurement5 = 0.0f;
+  g_measurement6 = 0.0f;
+  g_measurement7 = 0.0f;
+
+  // Clear any read buffer
+  memset(g_ReadBuffer, 0, sizeof(g_ReadBuffer));
+
+  // Clear instance-level cached info so callers see fresh info after close()
+  _batteryPercent = 0;
+  _chargeState = 0;
+  _RSSI = 0;
+  _channelNumber = 0;
+  _channel = 0;
+  memset(_orderCode, 0, sizeof(_orderCode));
+  memset(_serialNumber, 0, sizeof(_serialNumber));
+  memset(_channelName, 0, sizeof(_channelName));
+  memset(_channelUnits, 0, sizeof(_channelUnits));
+  _strBuffer[0] = '\0';
+
   #if defined DEBUG
-     Serial.println("*** BlE connection closed");
+     Serial.println("*** BLE connection closed and internal state cleared");
   #endif
 }
